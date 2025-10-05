@@ -15,50 +15,6 @@ namespace BayatGames.SaveGameFree
     /// </summary>
     public static class SaveGame
     {
-        /// <summary>
-        /// Save handler.
-        /// </summary>
-        public delegate void SaveHandler(object obj, string identifier, bool encode,
-            string password, ISaveGameSerializer serializer, ISaveGameEncoder encoder,
-            Encoding encoding, SaveGamePath path);
-
-        /// <summary>
-        /// Load handler.
-        /// </summary>
-        public delegate void LoadHandler(object loadedObj, string identifier, bool encode,
-            string password, ISaveGameSerializer serializer, ISaveGameEncoder encoder,
-            Encoding encoding, SaveGamePath path);
-
-        /// <summary>
-        /// Occurs when started saving.
-        /// </summary>
-        public static event SaveHandler OnSaving = delegate { };
-
-        /// <summary>
-        /// Occurs when on saved.
-        /// </summary>
-        public static event SaveHandler OnSaved = delegate { };
-
-        /// <summary>
-        /// Occurs when started loading.
-        /// </summary>
-        public static event LoadHandler OnLoading = delegate { };
-
-        /// <summary>
-        /// Occurs when on loaded.
-        /// </summary>
-        public static event LoadHandler OnLoaded = delegate { };
-
-        /// <summary>
-        /// The save callback.
-        /// </summary>
-        public static SaveHandler SaveCallback = delegate { };
-
-        /// <summary>
-        /// The load callback.
-        /// </summary>
-        public static LoadHandler LoadCallback = delegate { };
-
         private static ISaveGameSerializer m_Serializer = new SaveGameJsonSerializer();
         private static ISaveGameEncoder m_Encoder = new SaveGameSimpleEncoder();
         private static Encoding m_Encoding = Encoding.UTF8;
@@ -293,7 +249,7 @@ namespace BayatGames.SaveGameFree
         {
             ValidateIdentifier(identifier);
             
-            OnSaving?.Invoke(objToSave, identifier, shouldDataBeEncrypted, encryptionPassword, serializer,
+            SaveEvents.OnSaving?.Invoke(objToSave, identifier, shouldDataBeEncrypted, encryptionPassword, serializer,
                 encoder, encoding, basePath);
 
             serializer ??= Serializer;
@@ -341,9 +297,9 @@ namespace BayatGames.SaveGameFree
                 PlayerPrefs.Save();
             }
             stream.Dispose();
-            SaveCallback?.Invoke(objToSave, identifier, shouldDataBeEncrypted, encryptionPassword, serializer, encoder, encoding, basePath);
-            OnSaved?.Invoke(objToSave, identifier, shouldDataBeEncrypted, encryptionPassword, serializer, encoder, encoding, basePath);
-            
+            SaveEvents.SaveCallback?.Invoke(objToSave, identifier, shouldDataBeEncrypted, encryptionPassword, serializer, encoder, encoding, basePath);
+            SaveEvents.OnSaved?.Invoke(objToSave, identifier, shouldDataBeEncrypted, encryptionPassword, serializer, encoder, encoding, basePath);
+
         }
 
         private static void ValidateIdentifier(string identifier)
@@ -494,7 +450,7 @@ namespace BayatGames.SaveGameFree
         {
             ValidateIdentifier(identifier);
 
-            OnLoading?.Invoke(null, identifier, shouldLoadEncryptedData, encryptionPassword, serializer, encoder, encoding, basePath);
+            SaveEvents.OnLoading?.Invoke(null, identifier, shouldLoadEncryptedData, encryptionPassword, serializer, encoder, encoding, basePath);
             serializer ??= SaveGame.Serializer;
             encoding ??= SaveGame.DefaultEncoding;
             defaultValue ??= default;
@@ -539,10 +495,10 @@ namespace BayatGames.SaveGameFree
             result = serializer.Deserialize<T>(stream, encoding);
             stream.Dispose();
             result ??= defaultValue;
-            LoadCallback?.Invoke(result, identifier, shouldLoadEncryptedData, encryptionPassword, serializer,
+            SaveEvents.LoadCallback?.Invoke(result, identifier, shouldLoadEncryptedData, encryptionPassword, serializer,
                 encoder, encoding, basePath);
 
-            OnLoaded?.Invoke(result, identifier, shouldLoadEncryptedData, encryptionPassword, serializer,
+            SaveEvents.OnLoaded?.Invoke(result, identifier, shouldLoadEncryptedData, encryptionPassword, serializer,
                 encoder, encoding, basePath);
 
             return result;
@@ -775,10 +731,10 @@ namespace BayatGames.SaveGameFree
                 {
                     default:
                     case SaveGamePath.PersistentDataPath:
-                        result = string.Format("{0}/{1}", Application.persistentDataPath, identifier);
+                        result = string.Format(dataPathFormat, Application.persistentDataPath, identifier);
                         break;
                     case SaveGamePath.DataPath:
-                        result = string.Format("{0}/{1}", Application.dataPath, identifier);
+                        result = string.Format(dataPathFormat, Application.dataPath, identifier);
                         break;
                 }
             }
@@ -789,6 +745,8 @@ namespace BayatGames.SaveGameFree
 
             return result;
         }
+
+        private static readonly string dataPathFormat = "{0}/{1}";
 
         private static IList<DirectoryInfo> DecideDirectoryInfo(string filePath, SaveGamePath basePath)
         {

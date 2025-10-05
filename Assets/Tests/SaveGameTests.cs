@@ -116,12 +116,12 @@ public class SaveGameTests
         IList<string> calls = new List<string>();
 
         // Save and Load callbacks are fields; store originals to restore later.
-        var prevSaveCallback = SaveGame.SaveCallback;
-        var prevLoadCallback = SaveGame.LoadCallback;
+        var prevSaveCallback = SaveEvents.SaveCallback;
+        var prevLoadCallback = SaveEvents.LoadCallback;
 
         // Handlers we will attach
-        SaveGame.SaveHandler onSavingHandler, onSavedHandler;
-        SaveGame.LoadHandler onLoadingHandler, onLoadedHandler;
+        SaveHandler onSavingHandler, onSavedHandler;
+        LoadHandler onLoadingHandler, onLoadedHandler;
         PrepHandlers();
         void PrepHandlers()
         {
@@ -143,11 +143,11 @@ public class SaveGameTests
             };
         }
 
-        SaveGame.SaveCallback = (obj, id, encode, password, serializer, encoder, encoding, path) =>
+        SaveEvents.SaveCallback = (obj, id, encode, password, serializer, encoder, encoding, path) =>
         {
             calls.Add("SaveCallback");
         };
-        SaveGame.LoadCallback = (loadedObj, id, encode, password, serializer, encoder, encoding, path) =>
+        SaveEvents.LoadCallback = (loadedObj, id, encode, password, serializer, encoder, encoding, path) =>
         {
             calls.Add("LoadCallback");
         };
@@ -155,10 +155,10 @@ public class SaveGameTests
         AddSubs();
         void AddSubs()
         {
-            SaveGame.OnSaving += onSavingHandler;
-            SaveGame.OnSaved += onSavedHandler;
-            SaveGame.OnLoading += onLoadingHandler;
-            SaveGame.OnLoaded += onLoadedHandler;
+            SaveEvents.OnSaving += onSavingHandler;
+            SaveEvents.OnSaved += onSavedHandler;
+            SaveEvents.OnLoading += onLoadingHandler;
+            SaveEvents.OnLoaded += onLoadedHandler;
         }
 
         try
@@ -191,17 +191,17 @@ public class SaveGameTests
             RemoveSubs();
             void RemoveSubs()
             {
-                SaveGame.OnSaving -= onSavingHandler;
-                SaveGame.OnSaved -= onSavedHandler;
-                SaveGame.OnLoading -= onLoadingHandler;
-                SaveGame.OnLoaded -= onLoadedHandler;
+                SaveEvents.OnSaving -= onSavingHandler;
+                SaveEvents.OnSaved -= onSavedHandler;
+                SaveEvents.OnLoading -= onLoadingHandler;
+                SaveEvents.OnLoaded -= onLoadedHandler;
             }
             
             RestorePrevCallbacks();
             void RestorePrevCallbacks()
             {
-                SaveGame.SaveCallback = prevSaveCallback ?? delegate { };
-                SaveGame.LoadCallback = prevLoadCallback ?? delegate { };
+                SaveEvents.SaveCallback = prevSaveCallback ?? delegate { };
+                SaveEvents.LoadCallback = prevLoadCallback ?? delegate { };
             }
             
         }

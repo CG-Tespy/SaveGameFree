@@ -28,3 +28,9 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+
+
+.vs/SaveGameFree_Fork/*
+.vs/SaveGameFree_Fork/CopilotIndices/*
+Logs/*
+UserSettings/*
