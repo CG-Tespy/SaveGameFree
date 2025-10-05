@@ -13,7 +13,7 @@ namespace Bayat.Unity.SaveGameFree.Tests
     [TestFixture]
     public class SaveGameExtendedTests
     {
-        private List<string> _tempFiles = new List<string>();
+        private List<string> tempFiles = new List<string>();
 
         [SetUp]
         public void SetUp()
@@ -35,7 +35,7 @@ namespace Bayat.Unity.SaveGameFree.Tests
 
         private void CleanUpTempFiles()
         {
-            foreach (var elem in _tempFiles)
+            foreach (var elem in tempFiles)
             {
                 try
                 {
@@ -46,12 +46,12 @@ namespace Bayat.Unity.SaveGameFree.Tests
                 }
                 catch { }
             }
-            _tempFiles.Clear();
+            tempFiles.Clear();
         }
 
         private string GenerateRandomIdentifier(string prefix, string fileExtension = "sav")
         {
-            return $"{prefix}_{Guid.NewGuid():N}.{fileExtension}";
+            return $"{prefix}{Guid.NewGuid():N}.{fileExtension}";
         }
 
         #region Async Tests
@@ -59,12 +59,12 @@ namespace Bayat.Unity.SaveGameFree.Tests
         [Test]
         [TestCase(SaveGamePath.PersistentDataPath)]
         [TestCase(SaveGamePath.DataPath)]
-        public async Task SaveAsync_Creates_File(SaveGamePath path)
+        public async Task SaveAsyncCreatesFile(SaveGamePath path)
         {
             SaveGame.SavePath = path;
-            string identifier = GenerateRandomIdentifier("async_save");
+            string identifier = GenerateRandomIdentifier("asyncSave");
             string expectedPath = $"{path.ToRealPath()}/{identifier}";
-            _tempFiles.Add(expectedPath);
+            tempFiles.Add(expectedPath);
 
             await SaveGame.SaveAsync<string>(identifier, "async test data");
 
@@ -74,12 +74,12 @@ namespace Bayat.Unity.SaveGameFree.Tests
         [Test]
         [TestCase(SaveGamePath.PersistentDataPath)]
         [TestCase(SaveGamePath.DataPath)]
-        public async Task LoadAsync_Returns_Saved_Data(SaveGamePath path)
+        public async Task LoadAsyncReturnsSavedData(SaveGamePath path)
         {
             SaveGame.SavePath = path;
-            string identifier = GenerateRandomIdentifier("async_load");
+            string identifier = GenerateRandomIdentifier("asyncLoad");
             string expectedPath = $"{path.ToRealPath()}/{identifier}";
-            _tempFiles.Add(expectedPath);
+            tempFiles.Add(expectedPath);
 
             string testData = "async load test";
             await SaveGame.SaveAsync<string>(identifier, testData);
@@ -91,15 +91,15 @@ namespace Bayat.Unity.SaveGameFree.Tests
         [Test]
         [TestCase(SaveGamePath.PersistentDataPath)]
         [TestCase(SaveGamePath.DataPath)]
-        public async Task SaveAsync_And_LoadAsync_With_Encryption(SaveGamePath path)
+        public async Task SaveAsyncAndLoadAsyncWithEncryption(SaveGamePath path)
         {
             SaveGame.SavePath = path;
-            string identifier = GenerateRandomIdentifier("async_encrypted");
+            string identifier = GenerateRandomIdentifier("asyncEncrypted");
             string expectedPath = $"{path.ToRealPath()}/{identifier}";
-            _tempFiles.Add(expectedPath);
+            tempFiles.Add(expectedPath);
 
             string testData = "encrypted async data";
-            string password = "testpassword123";
+            string password = "testPassword123";
 
             await SaveGame.SaveAsync<string>(identifier, testData, true, password,
                 SaveGame.Serializer, SaveGame.Encoder, SaveGame.DefaultEncoding, SaveGamePath.PersistentDataPath);
@@ -117,15 +117,15 @@ namespace Bayat.Unity.SaveGameFree.Tests
         [Test]
         [TestCase(SaveGamePath.PersistentDataPath)]
         [TestCase(SaveGamePath.DataPath)]
-        public void Save_And_Load_With_Encryption(SaveGamePath path)
+        public void SaveAndLoadWithEncryption(SaveGamePath path)
         {
             SaveGame.SavePath = path;
             string identifier = GenerateRandomIdentifier("encrypted");
             string expectedPath = $"{path.ToRealPath()}/{identifier}";
-            _tempFiles.Add(expectedPath);
+            tempFiles.Add(expectedPath);
 
             string testData = "sensitive data";
-            string password = "securepassword456";
+            string password = "securePassword456";
 
             SaveGame.Save<string>(identifier, testData, true, password,
                 SaveGame.Serializer, SaveGame.Encoder, SaveGame.DefaultEncoding, path);
@@ -139,12 +139,12 @@ namespace Bayat.Unity.SaveGameFree.Tests
         [Test]
         [TestCase(SaveGamePath.PersistentDataPath)]
         [TestCase(SaveGamePath.DataPath)]
-        public void Load_With_Wrong_Password_Throws_Exception(SaveGamePath path)
+        public void LoadWithWrongPasswordThrowsException(SaveGamePath path)
         {
             SaveGame.SavePath = path;
-            string identifier = GenerateRandomIdentifier("wrong_password");
+            string identifier = GenerateRandomIdentifier("wrongPassword");
             string expectedPath = $"{path.ToRealPath()}/{identifier}";
-            _tempFiles.Add(expectedPath);
+            tempFiles.Add(expectedPath);
 
             string testData = "secret data";
             string correctPassword = "correct123";
@@ -175,12 +175,12 @@ namespace Bayat.Unity.SaveGameFree.Tests
         [Test]
         [TestCase(SaveGamePath.PersistentDataPath)]
         [TestCase(SaveGamePath.DataPath)]
-        public void Save_And_Load_With_Binary_Serializer(SaveGamePath path)
+        public void SaveAndLoadWithBinarySerializer(SaveGamePath path)
         {
             SaveGame.SavePath = path;
             string identifier = GenerateRandomIdentifier("binary");
             string expectedPath = $"{path.ToRealPath()}/{identifier}";
-            _tempFiles.Add(expectedPath);
+            tempFiles.Add(expectedPath);
 
             var serializer = new SaveGameBinarySerializer();
             string testData = "binary serialized data";
@@ -197,12 +197,12 @@ namespace Bayat.Unity.SaveGameFree.Tests
         [Test]
         [TestCase(SaveGamePath.PersistentDataPath)]
         [TestCase(SaveGamePath.DataPath)]
-        public void Save_And_Load_With_Xml_Serializer(SaveGamePath path)
+        public void SaveAndLoadWithXmlSerializer(SaveGamePath path)
         {
             SaveGame.SavePath = path;
             string identifier = GenerateRandomIdentifier("xml");
             string expectedPath = $"{path.ToRealPath()}/{identifier}";
-            _tempFiles.Add(expectedPath);
+            tempFiles.Add(expectedPath);
 
             var serializer = new SaveGameXmlSerializer();
             string testData = "xml serialized data";
@@ -249,12 +249,12 @@ namespace Bayat.Unity.SaveGameFree.Tests
         [Test]
         [TestCase(SaveGamePath.PersistentDataPath)]
         [TestCase(SaveGamePath.DataPath)]
-        public void Save_And_Load_Complex_Object(SaveGamePath path)
+        public void SaveAndLoadComplexObject(SaveGamePath path)
         {
             SaveGame.SavePath = path;
             string identifier = GenerateRandomIdentifier("complex");
             string expectedPath = $"{path.ToRealPath()}/{identifier}";
-            _tempFiles.Add(expectedPath);
+            tempFiles.Add(expectedPath);
 
             var testData = new TestDataClass
             {
@@ -281,7 +281,7 @@ namespace Bayat.Unity.SaveGameFree.Tests
         [Test]
         [TestCase(SaveGamePath.PersistentDataPath)]
         [TestCase(SaveGamePath.DataPath)]
-        public void Load_Nonexistent_File_Returns_Default(SaveGamePath path)
+        public void LoadNonexistentFileReturnsDefault(SaveGamePath path)
         {
             SaveGame.SavePath = path;
             string identifier = GenerateRandomIdentifier("nonexistent");
@@ -294,12 +294,12 @@ namespace Bayat.Unity.SaveGameFree.Tests
         [Test]
         [TestCase(SaveGamePath.PersistentDataPath)]
         [TestCase(SaveGamePath.DataPath)]
-        public void Delete_Removes_File(SaveGamePath path)
+        public void DeleteRemovesFile(SaveGamePath path)
         {
             SaveGame.SavePath = path;
-            string identifier = GenerateRandomIdentifier("delete_test");
+            string identifier = GenerateRandomIdentifier("deleteTest");
             string expectedPath = $"{path.ToRealPath()}/{identifier}";
-            _tempFiles.Add(expectedPath);
+            tempFiles.Add(expectedPath);
 
             SaveGame.Save<string>(identifier, "data to delete");
             Assert.IsTrue(SaveGame.Exists(identifier));
@@ -309,9 +309,9 @@ namespace Bayat.Unity.SaveGameFree.Tests
         }
 
         [Test]
-        public void Exists_Returns_False_For_Nonexistent_File()
+        public void ExistsReturnsFalseForNonexistentFile()
         {
-            string identifier = GenerateRandomIdentifier("nonexistent_check");
+            string identifier = GenerateRandomIdentifier("nonexistentCheck");
             Assert.IsFalse(SaveGame.Exists(identifier));
         }
 
@@ -322,11 +322,11 @@ namespace Bayat.Unity.SaveGameFree.Tests
         [Test]
         [TestCase(SaveGamePath.PersistentDataPath)]
         [TestCase(SaveGamePath.DataPath)]
-        public void Save_And_Load_Using_PlayerPrefs(SaveGamePath path)
+        public void SaveAndLoadUsingPlayerPrefs(SaveGamePath path)
         {
             SaveGame.UsePlayerPrefs = true;
             SaveGame.SavePath = path;
-            string identifier = GenerateRandomIdentifier("playerprefs");
+            string identifier = GenerateRandomIdentifier("playerPrefs");
 
             string testData = "playerprefs data";
             SaveGame.Save<string>(identifier, testData);
