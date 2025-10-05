@@ -25,4 +25,18 @@ namespace BayatGames.SaveGameFree
 
     }
 
+    public static class SaveGamePathExt
+    {
+        public static string ToRealPath(this SaveGamePath path)
+        {
+            return path switch
+            {
+                SaveGamePath.PersistentDataPath => Application.persistentDataPath,
+                SaveGamePath.DataPath => Application.dataPath,
+                SaveGamePath.Custom => "",
+                _ => Application.persistentDataPath,
+            };
+        }
+    }
+
 }
