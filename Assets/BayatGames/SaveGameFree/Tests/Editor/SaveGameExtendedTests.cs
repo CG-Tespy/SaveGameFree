@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
 using Bayat.Unity.SaveGameFree.Serializers;
+using UnityEngine.TestTools;
 
 namespace Bayat.Unity.SaveGameFree.Tests
 {
@@ -154,6 +155,14 @@ namespace Bayat.Unity.SaveGameFree.Tests
 
             Assert.Throws<InvalidOperationException>(() =>
             {
+                // We're expecting two error messages here
+                string expectedLogMessage = $"Failed to load data with identifier '{identifier}': " +
+                $"Padding is invalid and cannot be removed.";
+                LogAssert.Expect(LogType.Error, expectedLogMessage);
+
+                expectedLogMessage = "CryptographicException: Padding is invalid and cannot be removed.";
+                LogAssert.Expect(LogType.Exception, expectedLogMessage);
+
                 SaveGame.Load<string>(identifier, default(string), true, wrongPassword,
                     SaveGame.Serializer, SaveGame.Encoder, SaveGame.DefaultEncoding, path);
             });
