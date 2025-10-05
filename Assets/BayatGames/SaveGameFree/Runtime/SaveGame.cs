@@ -1,4 +1,4 @@
-﻿using Bayat.Unity.SaveGameFree.Encoders;
+using Bayat.Unity.SaveGameFree.Encoders;
 using Bayat.Unity.SaveGameFree.Serializers;
 using System;
 using System.Collections.Generic;
@@ -882,15 +882,12 @@ namespace Bayat.Unity.SaveGameFree
         public static void DeleteAll(SaveGamePath path)
         {
             string dirPath = "";
-            switch (path)
-            {
-                case SaveGamePath.PersistentDataPath:
-                    dirPath = Application.persistentDataPath;
-                    break;
-                case SaveGamePath.DataPath:
-                    dirPath = Application.dataPath;
-                    break;
-            }
+#if UNITY_EDITOR
+            // Need to force this to use PersistentDataPath in editor to avoid deleting project files
+            dirPath = SaveGamePath.PersistentDataPath.ToRealPath();
+#else
+            dirPath = path.ToRealPath();
+#endif
 
             if (!usePlayerPrefs)
             {
