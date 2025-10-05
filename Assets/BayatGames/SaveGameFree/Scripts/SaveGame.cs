@@ -248,33 +248,40 @@ namespace BayatGames.SaveGameFree
             ISaveGameSerializer serializer, ISaveGameEncoder encoder, Encoding encoding, SaveGamePath basePath)
         {
             ValidateIdentifier(identifier);
-            
+
             SaveEvents.OnSaving?.Invoke(objToSave, identifier, shouldDataBeEncrypted, encryptionPassword, serializer,
                 encoder, encoding, basePath);
 
             serializer ??= Serializer;
             encoding ??= DefaultEncoding;
+            objToSave ??= default;
 
             string filePath = DecideFilePath(identifier, basePath);
 
-            objToSave ??= default;
-            Stream stream = null;
-            if (shouldDataBeEncrypted)
+            Stream stream = DecideOnStream(shouldDataBeEncrypted, filePath);
+            static Stream DecideOnStream(bool shouldDataBeEncrypted, string filePath)
             {
-                stream = new MemoryStream();
-            }
-            else
-            {
-                if (!usePlayerPrefs)
-                {
-                    EnsureDirectoryExists(filePath);
-                    stream = File.Create(filePath);
-                }
-                else
+                Stream stream = null;
+                if (shouldDataBeEncrypted)
                 {
                     stream = new MemoryStream();
                 }
+                else
+                {
+                    if (!usePlayerPrefs)
+                    {
+                        EnsureDirectoryExists(filePath);
+                        stream = File.Create(filePath);
+                    }
+                    else
+                    {
+                        stream = new MemoryStream();
+                    }
+                }
+
+                return stream;
             }
+
             serializer.Serialize(objToSave, stream, encoding);
             if (shouldDataBeEncrypted)
             {
@@ -300,13 +307,14 @@ namespace BayatGames.SaveGameFree
             SaveEvents.SaveCallback?.Invoke(objToSave, identifier, shouldDataBeEncrypted, encryptionPassword, serializer, encoder, encoding, basePath);
             SaveEvents.OnSaved?.Invoke(objToSave, identifier, shouldDataBeEncrypted, encryptionPassword, serializer, encoder, encoding, basePath);
 
+            
         }
 
         private static void ValidateIdentifier(string identifier)
         {
             if (string.IsNullOrEmpty(identifier))
             {
-                throw new System.ArgumentNullException("identifier");
+                throw new ArgumentNullException("identifier");
             }
         }
 
@@ -450,11 +458,20 @@ namespace BayatGames.SaveGameFree
         {
             ValidateIdentifier(identifier);
 
-            SaveEvents.OnLoading?.Invoke(null, identifier, shouldLoadEncryptedData, encryptionPassword, serializer, encoder, encoding, basePath);
-            serializer ??= SaveGame.Serializer;
-            encoding ??= SaveGame.DefaultEncoding;
-            defaultValue ??= default;
-            T result = defaultValue;
+            SaveEvents.OnLoading?.Invoke(null, identifier, shouldLoadEncryptedData,
+                encryptionPassword, serializer, encoder,
+                encoding, basePath);
+
+            T result;
+            SetDefaultsAsAppropriate();
+            void SetDefaultsAsAppropriate()
+            {
+                serializer ??= Serializer;
+                encoding ??= DefaultEncoding;
+                defaultValue ??= default;
+                result = defaultValue;
+            }
+
             string filePath = DecideFilePath(identifier, basePath);
             if (!Exists(filePath, basePath))
             {
@@ -465,43 +482,81 @@ namespace BayatGames.SaveGameFree
                     identifier);
                 return result;
             }
-            Stream stream = null;
-            if (shouldLoadEncryptedData)
+            Stream stream = DecideOnStream(shouldLoadEncryptedData, encryptionPassword, encoder, encoding, filePath);
+            static Stream DecideOnStream(bool shouldLoadEncryptedData, string encryptionPassword,
+                ISaveGameEncoder encoder, Encoding encoding, string filePath)
             {
-                string data = "";
-                if (!usePlayerPrefs)
+                Stream result;
+                bool loadPlainUnencryptedFile = !shouldLoadEncryptedData && !usePlayerPrefs;
+                if (loadPlainUnencryptedFile)
                 {
-                    data = File.ReadAllText(filePath, encoding);
+                    result = File.OpenRead(filePath);
                 }
                 else
                 {
-                    data = PlayerPrefs.GetString(filePath);
+                    string dataToRead = GetBaseEncodedString();
+                    string GetBaseEncodedString()
+                    {
+                        string result = "";
+                        if (shouldLoadEncryptedData)
+                        {
+                            if (!usePlayerPrefs)
+                            {
+                                result = File.ReadAllText(filePath, encoding);
+                            }
+                            else
+                            {
+                                result = PlayerPrefs.GetString(filePath);
+                            }
+
+                            result = encoder.Decode(result, encryptionPassword);
+                        }
+                        else if (usePlayerPrefs)
+                        {
+                            result = PlayerPrefs.GetString(filePath);
+                        }
+
+                        return result;
+                    }
+
+                    byte[] decodedBytes; // For when reading from disk
+                    if (shouldLoadEncryptedData)
+                    {
+                        decodedBytes = Convert.FromBase64String(dataToRead);
+                        result = new MemoryStream(decodedBytes, true);
+                    }
+                    else
+                    {
+                        if (!usePlayerPrefs)
+                        {
+                            result = File.OpenRead(filePath);
+                        }
+                        else
+                        {
+                            decodedBytes = encoding.GetBytes(dataToRead);
+                            result = new MemoryStream(decodedBytes);
+                        }
+                    }
+                    
                 }
-                string decoded = encoder.Decode(data, encryptionPassword);
-                stream = new MemoryStream(System.Convert.FromBase64String(decoded), true);
+                
+                return result;
             }
-            else
-            {
-                if (!usePlayerPrefs)
-                {
-                    stream = File.OpenRead(filePath);
-                }
-                else
-                {
-                    string data = PlayerPrefs.GetString(filePath);
-                    stream = new MemoryStream(encoding.GetBytes(data));
-                }
-            }
+
             result = serializer.Deserialize<T>(stream, encoding);
             stream.Dispose();
-            result ??= defaultValue;
-            SaveEvents.LoadCallback?.Invoke(result, identifier, shouldLoadEncryptedData, encryptionPassword, serializer,
-                encoder, encoding, basePath);
 
-            SaveEvents.OnLoaded?.Invoke(result, identifier, shouldLoadEncryptedData, encryptionPassword, serializer,
-                encoder, encoding, basePath);
+            result ??= defaultValue; // Since we might've deserialized a null
+
+            SaveEvents.LoadCallback?.Invoke(result, identifier, shouldLoadEncryptedData,
+                encryptionPassword, serializer, encoder,
+                encoding, basePath);
+            SaveEvents.OnLoaded?.Invoke(result, identifier, shouldLoadEncryptedData,
+                encryptionPassword, serializer, encoder,
+                encoding, basePath);
 
             return result;
+
         }
 
         /// <summary>
