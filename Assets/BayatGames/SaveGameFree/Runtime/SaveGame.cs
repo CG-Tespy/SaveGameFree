@@ -232,6 +232,12 @@ namespace Bayat.Unity.SaveGameFree
         }
 
         /// <summary>
+        /// Decides where on the file system to save the file. Of course, this only applies
+        /// when we're not saving to PlayerPrefs.
+        /// </summary>
+        public static ISavePathResolver PathResolver { get; set; } = new DefaultSavePathResolver();
+
+        /// <summary>
         /// Saves data using the identifier.
         /// </summary>
         public static void Save<T>(string identifier, T objToSave)
@@ -881,13 +887,7 @@ namespace Bayat.Unity.SaveGameFree
         /// </summary>
         public static void DeleteAll(SaveGamePath path)
         {
-            string dirPath = "";
-#if UNITY_EDITOR
-            // Need to force this to use PersistentDataPath in editor to avoid deleting project files
-            dirPath = SaveGamePath.PersistentDataPath.ToRealPath();
-#else
-            dirPath = path.ToRealPath();
-#endif
+            string dirPath = PathResolver.GetSaveFolderPath(path);
 
             if (!usePlayerPrefs)
             {
@@ -1001,16 +1001,7 @@ namespace Bayat.Unity.SaveGameFree
                 // or small custom class that is supposed to be part of a bigger save-data class.
                 // And since this system doesn't specify slots, we assume that the identifier has the 
                 // slot number in it.
-                switch (basePath)
-                {
-                    default:
-                    case SaveGamePath.PersistentDataPath:
-                        result = $"{Application.persistentDataPath}/{identifier}";
-                        break;
-                    case SaveGamePath.DataPath:
-                        result = $"{Application.dataPath}/{identifier}";
-                        break;
-                }
+                result = PathResolver.GetSaveFilePath(identifier, basePath);
             }
             else
             {
